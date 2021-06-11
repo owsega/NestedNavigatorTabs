@@ -2,20 +2,19 @@ import 'package:flutter/material.dart';
 
 class RouteObserverProvider extends InheritedWidget {
   const RouteObserverProvider({
-    Key key,
-    @required this.routeObserver,
-    @required Widget child,
-  })  : assert(routeObserver != null),
-        assert(child != null),
+    Key? key,
+    required this.routeObserver,
+    required Widget child,
+  })   : assert(routeObserver != null),
         super(key: key, child: child);
 
-  final RouteObserver routeObserver;
+  final RouteObserver? routeObserver;
 
   @override
   bool updateShouldNotify(covariant RouteObserverProvider oldWidget) =>
       routeObserver != oldWidget.routeObserver;
 
-  static RouteObserverProvider of(BuildContext context) {
+  static RouteObserverProvider? of(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<RouteObserverProvider>();
   }
 }
@@ -27,7 +26,10 @@ class VisibilityObserver extends StatefulWidget {
   final Function(bool isPopped) onInvisible;
 
   const VisibilityObserver(
-      {Key key, this.onVisible, this.onInvisible, @required this.child})
+      {Key? key,
+      required this.onVisible,
+      required this.onInvisible,
+      required this.child})
       : super(key: key);
 
   @override
@@ -36,47 +38,50 @@ class VisibilityObserver extends StatefulWidget {
 
 class _VisibilityObserverState extends State<VisibilityObserver>
     with RouteAware {
-  RouteObserver<PageRoute> routeObserver;
+  late RouteObserver<Route> routeObserver;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    RouteObserverProvider provider = RouteObserverProvider.of(context);
+    final provider = RouteObserverProvider.of(context);
     if (provider == null) return;
-    routeObserver = provider.routeObserver;
-    assert(routeObserver != null);
-    routeObserver?.subscribe(this, ModalRoute.of(context));
+    final _routeObserver = provider.routeObserver;
+    assert(_routeObserver != null);
+    final _modalRoute = ModalRoute.of(context);
+    assert(_modalRoute != null);
+    routeObserver = _routeObserver!;
+    routeObserver.subscribe(this, _modalRoute!);
   }
 
   @override
   void dispose() {
-    routeObserver?.unsubscribe(this);
+    routeObserver.unsubscribe(this);
     super.dispose();
   }
 
   @override
   // Called when the current route has been pushed.
   void didPush() {
-    widget.onVisible?.call(false);
+    widget.onVisible.call(false);
   }
 
   @override
   // Called when the top route has been popped off, and the current route shows up.
   void didPopNext() {
-    widget.onVisible?.call(true);
+    widget.onVisible.call(true);
   }
 
   @override
   // current route is popped
   void didPop() {
-    widget.onInvisible?.call(true);
+    widget.onInvisible.call(true);
     super.didPop();
   }
 
   @override
   // new route has been pushed
   void didPushNext() {
-    widget.onInvisible?.call(false);
+    widget.onInvisible.call(false);
     super.didPushNext();
   }
 

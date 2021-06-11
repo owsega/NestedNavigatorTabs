@@ -4,6 +4,7 @@ import 'package:nested_navigator_tabs/nested_navigator_tabs.dart';
 import 'package:nested_navigator_tabs/route_observer.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
 }
 
@@ -22,7 +23,7 @@ class MyApp extends StatelessWidget {
       navigatorObservers: [routeObserver],
       builder: (context, child) => RouteObserverProvider(
         routeObserver: routeObserver,
-        child: child,
+        child: child!,
       ),
       initialRoute: '/',
       onGenerateRoute: generateRoute,
@@ -32,7 +33,7 @@ class MyApp extends StatelessWidget {
 
 class DemoPage extends StatelessWidget {
   const DemoPage({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -70,15 +71,17 @@ class DemoPage extends StatelessWidget {
 
 class TabPage extends StatelessWidget {
   const TabPage({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return NestedNavigatorTabs(
       generator: generateRoute,
-      onGlobalStackChanged: ({routeName, tab, type}) {
-        print('$routeName on tab $tab became ${type == StackEvent.becameVisible ? "visible" : "invisible"}');
+      onGlobalStackChanged: (
+          {required routeName, required tab, required type}) {
+        print(
+            '$routeName on tab $tab became ${type == StackEvent.becameVisible ? "visible" : "invisible"}');
       },
       tabs: [
         NavigatorTab(
@@ -100,7 +103,7 @@ class TabPage extends StatelessWidget {
 
 class AdvancedTabPage extends StatelessWidget {
   const AdvancedTabPage({
-    Key key,
+    Key? key,
   }) : super(key: key);
 
   @override
@@ -150,9 +153,9 @@ class AdvancedTabPage extends StatelessWidget {
 
 class CustomPage extends StatefulWidget {
   final String title;
-  final String to;
+  final String? to;
 
-  const CustomPage({Key key, @required this.title, this.to}) : super(key: key);
+  const CustomPage({Key? key, required this.title, this.to}) : super(key: key);
 
   @override
   _CustomPageState createState() => _CustomPageState();
@@ -169,7 +172,7 @@ class _CustomPageState extends State<CustomPage> {
       ),
       body: VisibilityObserver(
         onVisible: (fromPop) {
-          WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+          WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
             setState(() {
               showCount++;
             });
@@ -195,9 +198,7 @@ class _CustomPageState extends State<CustomPage> {
                   color: Colors.red,
                   child: Text("next page"),
                   onPressed: widget.to != null
-                      ? () {
-                          Navigator.of(context).pushNamed(widget.to);
-                        }
+                      ? () => Navigator.of(context).pushNamed(widget.to!)
                       : null,
                 ),
                 MaterialButton(

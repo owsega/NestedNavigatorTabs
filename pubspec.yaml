@@ -1,11 +1,10 @@
 name: nested_navigator_tabs
 description: Tabs with nested navigators and multiple backstack handling stategy. Also includes correct visibility detection for the inner pages.
-version: 0.2.3
+version: 0.2.4
 repository: https://github.com/Kodam-zz/NestedNavigatorTabs
 
 environment:
-  sdk: ">=2.7.0 <3.0.0"
-  flutter: ">=1.17.0 <2.0.0"
+  sdk: ">=2.12.1 <3.0.0"
 
 dependencies:
   flutter:

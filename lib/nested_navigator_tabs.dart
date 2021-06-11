@@ -12,11 +12,11 @@ class NestedNavigatorTabs extends StatefulWidget {
       BuildContext context,
       List<BottomNavigationBarItem> navItems,
       int selectedIndex,
-      Function(int) onIndexSelected) bottomBarBuilder;
+      Function(int) onIndexSelected)? bottomBarBuilder;
 
   /// Custom layout builder
   final Widget Function(BuildContext context, IndexedStack container,
-      Widget bottomBar, int currentIndex) layoutBuilder;
+      Widget bottomBar, int currentIndex)? layoutBuilder;
 
   /// Pops the current nested navigator to the initial route when the selected tab is tapped
   final bool clearStackOnDoubleTap;
@@ -33,8 +33,10 @@ class NestedNavigatorTabs extends StatefulWidget {
   /// Defines how the tabs and the inner navigation stacks work.
   final BackMode backMode;
 
-  final void Function({@required int tab, @required String routeName, @required StackEvent type})
-  onGlobalStackChanged;
+  final void Function(
+      {required int tab,
+      required String routeName,
+      required StackEvent type})? onGlobalStackChanged;
 
   List<String> get _defaultRouteNames =>
       tabs.map((e) => e.defaultRouteName).toList();
@@ -43,9 +45,9 @@ class NestedNavigatorTabs extends StatefulWidget {
       tabs.map((e) => e.navItem).toList();
 
   NestedNavigatorTabs({
-    Key key,
-    @required this.tabs,
-    @required this.generator,
+    Key? key,
+    required this.tabs,
+    required this.generator,
     this.bottomBarBuilder,
     this.layoutBuilder,
     this.clearStackOnDoubleTap = true,
@@ -53,24 +55,18 @@ class NestedNavigatorTabs extends StatefulWidget {
     this.initialTab = 0,
     this.backMode = BackMode.globalStack,
     this.onGlobalStackChanged,
-  })  : assert(tabs != null && tabs.isNotEmpty,
-            "Tabs must contain at least 1 item"),
+  })  : assert(tabs.isNotEmpty, "Tabs must contain at least 1 item"),
         assert(initialTab >= 0 && initialTab < tabs.length),
-        assert(generator != null),
-        assert(clearStackOnDoubleTap != null),
-        assert(popNestedRouteOnBack != null),
         super(key: key);
 
   @override
   _NestedNavigatorTabsState createState() => _NestedNavigatorTabsState();
 
-  static _NestedNavigatorTabsState of(
+  static _NestedNavigatorTabsState? of(
     BuildContext context, {
     bool isNullOk = false,
   }) {
-    assert(isNullOk != null);
-    assert(context != null);
-    final _NestedNavigatorTabsState result = context.findAncestorStateOfType();
+    final _NestedNavigatorTabsState? result = context.findAncestorStateOfType();
     if (isNullOk || result != null) {
       return result;
     }
@@ -82,29 +78,29 @@ class NestedNavigatorTabs extends StatefulWidget {
   /// Gets the NavigatorState of the [tabIndex] tab and optionally switches to it.
   static NavigatorState tabNavigatorOf(
     BuildContext context, {
-    @required int tabIndex,
-    @required bool setToCurrent,
+    required int tabIndex,
+    required bool setToCurrent,
   }) {
-    final tabNavigatorState = of(context);
+    final tabNavigatorState = of(context)!;
     if (setToCurrent &&
         tabIndex != tabNavigatorState.tabIndex &&
         tabNavigatorState.mounted) {
       tabNavigatorState.onTapNav(tabIndex, noClear: true);
     }
-    return tabNavigatorState.navStates[tabIndex].currentState;
+    return tabNavigatorState.navStates[tabIndex].currentState!;
   }
 
-  static void switchTabTo(BuildContext context, {@required int tabIndex}) {
+  static void switchTabTo(BuildContext context, {required int tabIndex}) {
     tabNavigatorOf(context, tabIndex: tabIndex, setToCurrent: true);
   }
 
   /// Pushes the [route] to the current or [tabIndex] tab
   static void navigateTo(
     BuildContext context, {
-    int tabIndex,
-    @required Route route,
+    int? tabIndex,
+    required Route route,
   }) {
-    final tabNavigatorState = of(context);
+    final tabNavigatorState = of(context)!;
 
     tabNavigatorOf(
       context,
@@ -118,7 +114,7 @@ class NestedNavigatorTabs extends StatefulWidget {
   ///Popping the current tab's route and switchis to the previous tab if needed
   ///(example: backMode is globalStack and the previous page was on a different tab)
   static void back(BuildContext context) {
-    final scaffoldState = of(context);
+    final scaffoldState = of(context)!;
     scaffoldState.back();
   }
 }
@@ -126,9 +122,9 @@ class NestedNavigatorTabs extends StatefulWidget {
 class _NestedNavigatorTabsState extends State<NestedNavigatorTabs> {
   int tabIndex = 0;
 
-  List<GlobalKey<NavigatorState>> navStates;
-  List<RouteObserver<PageRoute>> routeObservers;
-  List<NavigatorObserver> navigatorObservers;
+  late List<GlobalKey<NavigatorState>> navStates;
+  late List<RouteObserver<PageRoute>> routeObservers;
+  late List<NavigatorObserver> navigatorObservers;
 
   List<TabNavigatorStackItem> globalStack = [];
 
@@ -144,15 +140,18 @@ class _NestedNavigatorTabsState extends State<NestedNavigatorTabs> {
         .toList();
     navigatorObservers = widget._defaultRouteNames
         .map(withIndex((navigator, index) => TabNavigatorObserver(
-            emptyName: _emptyRoute, globalStack: globalStack, tab: index, onGlobalStackChanged: ({routeName, type}) {
-              // print('$routeName on tab $index became ${type == StackEvent.becameVisible ? "visible" : "invisible"}');
-                widget.onGlobalStackChanged?.call(tab: index, routeName: routeName, type: type);
-            },)))
+              emptyName: _emptyRoute,
+              globalStack: globalStack,
+              tab: index,
+              onGlobalStackChanged: ({required routeName, required type}) =>
+                  widget.onGlobalStackChanged
+                      ?.call(tab: index, routeName: routeName, type: type),
+            )))
         .toList();
 
     onWillPopForStayOnTab = () async {
-      if (navStates[tabIndex].currentState.canPop()) {
-        navStates[tabIndex].currentState.pop();
+      if (true == navStates[tabIndex].currentState?.canPop()) {
+        navStates[tabIndex].currentState!.pop();
         return false;
       }
       return true;
@@ -167,8 +166,8 @@ class _NestedNavigatorTabsState extends State<NestedNavigatorTabs> {
           globalStack[globalStack.length - 2].tab != tabIndex) {
         // previous route is on a different tab
         var newTab = globalStack[globalStack.length - 2].tab;
-        if (navStates[tabIndex].currentState.canPop()) {
-          navStates[tabIndex].currentState.pop();
+        if (true == navStates[tabIndex].currentState?.canPop()) {
+          navStates[tabIndex].currentState!.pop();
         }
         onTapNav(newTab);
         return false;
@@ -176,24 +175,24 @@ class _NestedNavigatorTabsState extends State<NestedNavigatorTabs> {
           globalStack.last.tab == tabIndex &&
           globalStack[globalStack.length - 2].tab == tabIndex) {
         // previous route is on the same tab
-        if (navStates[tabIndex].currentState.canPop()) {
-          navStates[tabIndex].currentState.pop();
+        if (true == navStates[tabIndex].currentState?.canPop()) {
+          navStates[tabIndex].currentState!.pop();
         }
         return false;
-      } else if (navStates[tabIndex].currentState.canPop()) {
-        navStates[tabIndex].currentState.pop();
+      } else if (true == navStates[tabIndex].currentState?.canPop()) {
+        navStates[tabIndex].currentState!.pop();
         return false;
       }
       return true;
     };
     onWillPopForEmptySwitch = () async {
-      if (!navStates[tabIndex].currentState.canPop() &&
+      if (true != navStates[tabIndex].currentState?.canPop() &&
           globalStack.length > 1) {
         onTapNav(
             globalStack.where((element) => element.tab != tabIndex).last.tab);
         return false;
-      } else if (navStates[tabIndex].currentState.canPop()) {
-        navStates[tabIndex].currentState.pop();
+      } else if (true == navStates[tabIndex].currentState?.canPop()) {
+        navStates[tabIndex].currentState!.pop();
         return false;
       }
       return true;
@@ -202,23 +201,19 @@ class _NestedNavigatorTabsState extends State<NestedNavigatorTabs> {
     super.initState();
   }
 
-  Function onWillPopForStayOnTab;
-  Function onWillPopForGlobalStack;
-  Function onWillPopForEmptySwitch;
+  late Future<bool> Function() onWillPopForStayOnTab;
+  late Future<bool> Function() onWillPopForGlobalStack;
+  late Future<bool> Function() onWillPopForEmptySwitch;
 
-  Function get popHandler {
+  Future<bool> Function() get popHandler {
     switch (widget.backMode) {
       case BackMode.stayOnTab:
         return onWillPopForStayOnTab;
-        break;
       case BackMode.globalStack:
         return onWillPopForGlobalStack;
-        break;
       case BackMode.switchTabWhenEmpty:
         return onWillPopForEmptySwitch;
-        break;
     }
-    return null;
   }
 
   @override
@@ -238,13 +233,13 @@ class _NestedNavigatorTabsState extends State<NestedNavigatorTabs> {
           if (fromPop) {
             navStates[tabIndex]
                 .currentState
-                .popUntil((route) => route.settings.name != _emptyRoute);
+                ?.popUntil((route) => route.settings.name != _emptyRoute);
           } else {
             //runs when initialized
-            WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+            WidgetsBinding.instance?.addPostFrameCallback((timeStamp) {
               navStates.forEach((element) {
                 if (element != navStates[tabIndex]) {
-                  element.currentState.pushNamed(_emptyRoute);
+                  element.currentState?.pushNamed(_emptyRoute);
                 }
               });
             });
@@ -252,7 +247,7 @@ class _NestedNavigatorTabsState extends State<NestedNavigatorTabs> {
         },
         onInvisible: (isPopped) {
           if (!isPopped) {
-            navStates[tabIndex].currentState.pushNamed(_emptyRoute);
+            navStates[tabIndex].currentState?.pushNamed(_emptyRoute);
           }
         },
         child: widget.layoutBuilder
@@ -301,15 +296,15 @@ class _NestedNavigatorTabsState extends State<NestedNavigatorTabs> {
     if (index == tabIndex) {
       // double tap
       if (widget.clearStackOnDoubleTap && !noClear) {
-        navStates[index].currentState.popUntil((route) => route.isFirst);
+        navStates[index].currentState?.popUntil((route) => route.isFirst);
       }
     } else if (mounted) {
       var oldInd = tabIndex;
       var newInd = index;
-      navStates[oldInd].currentState.pushNamed(_emptyRoute);
+      navStates[oldInd].currentState?.pushNamed(_emptyRoute);
       navStates[newInd]
           .currentState
-          .popUntil((route) => route.settings.name != _emptyRoute);
+          ?.popUntil((route) => route.settings.name != _emptyRoute);
 
       setState(() {
         tabIndex = index;
@@ -322,7 +317,7 @@ class NavigatorTab {
   final String defaultRouteName;
   final BottomNavigationBarItem navItem;
 
-  NavigatorTab({@required this.defaultRouteName, @required this.navItem});
+  NavigatorTab({required this.defaultRouteName, required this.navItem});
 }
 
 typedef MapFn<A, B> = B Function(A a);
@@ -340,10 +335,7 @@ class TabNavigatorStackItem {
   final String routeName;
   final bool isFirst;
 
-  TabNavigatorStackItem(this.tab, this.routeName, {this.isFirst = false})
-      : assert(isFirst != null),
-        assert(tab != null),
-        assert(routeName != null);
+  TabNavigatorStackItem(this.tab, this.routeName, {this.isFirst = false});
 }
 
 enum StackEvent { becameVisible, becameInvisible }
@@ -352,37 +344,39 @@ class TabNavigatorObserver extends NavigatorObserver {
   final int tab;
   final List<TabNavigatorStackItem> stack = [];
   final List<TabNavigatorStackItem> globalStack;
-  final void Function({@required String routeName, @required StackEvent type})
+  final void Function({required String routeName, required StackEvent type})
       onGlobalStackChanged;
   final String emptyName;
 
   TabNavigatorObserver(
-      {@required this.globalStack,
-      @required this.onGlobalStackChanged,
-      @required this.tab,
-      @required this.emptyName});
+      {required this.globalStack,
+      required this.onGlobalStackChanged,
+      required this.tab,
+      required this.emptyName});
 
   @override
-  void didPop(Route route, Route previousRoute) {
+  void didPop(Route route, Route? previousRoute) {
     // print("item popped on tab: $tab with name: ${route.settings.name}");
-    assert(route.settings != null);
-    assert(previousRoute.settings != null);
+    assert(previousRoute?.settings != null);
 
     if (route.settings.name != emptyName) {
       stack.removeLast();
       var last = globalStack.where((element) => element.tab == tab).last;
       globalStack.remove(last);
-      onGlobalStackChanged(routeName: route.settings.name, type: StackEvent.becameInvisible);
-      onGlobalStackChanged(routeName: previousRoute.settings.name, type: StackEvent.becameVisible);
+      onGlobalStackChanged(
+          routeName: route.settings.name!, type: StackEvent.becameInvisible);
+      onGlobalStackChanged(
+          routeName: previousRoute!.settings.name!,
+          type: StackEvent.becameVisible);
     } else {
-      if (globalStack.firstWhere((element) => element.tab == tab,
-              orElse: () => null) ==
-          null) {
-        globalStack.add(TabNavigatorStackItem(tab, previousRoute.settings.name,
+      if (!globalStack.any((element) => element.tab == tab)) {
+        globalStack.add(TabNavigatorStackItem(
+            tab, previousRoute!.settings.name!,
             isFirst: previousRoute.isFirst));
       }
-      onGlobalStackChanged(routeName: previousRoute.settings.name, type: StackEvent.becameVisible);
-
+      onGlobalStackChanged(
+          routeName: previousRoute!.settings.name!,
+          type: StackEvent.becameVisible);
     }
     // print("items: " + globalStack.toString());
 
@@ -390,37 +384,36 @@ class TabNavigatorObserver extends NavigatorObserver {
   }
 
   @override
-  void didReplace({Route<dynamic> newRoute, Route<dynamic> oldRoute}) {
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
     // print("item replaced on tab: $tab with name: ${newRoute.settings.name}");
-    assert(newRoute.settings != null);
-    assert(oldRoute.settings != null);
+    assert(newRoute?.settings != null);
+    assert(oldRoute?.settings != null);
 
     stack.removeLast();
     globalStack.remove(globalStack.where((element) => element.tab == tab).last);
 
-    stack.add(TabNavigatorStackItem(tab, newRoute.settings.name));
-    globalStack.add(TabNavigatorStackItem(tab, newRoute.settings.name));
-    onGlobalStackChanged(routeName: oldRoute.settings.name, type: StackEvent.becameInvisible);
-    onGlobalStackChanged(routeName: newRoute.settings.name, type: StackEvent.becameVisible);
+    stack.add(TabNavigatorStackItem(tab, newRoute!.settings.name!));
+    globalStack.add(TabNavigatorStackItem(tab, newRoute.settings.name!));
+    onGlobalStackChanged(
+        routeName: oldRoute!.settings.name!, type: StackEvent.becameInvisible);
+    onGlobalStackChanged(
+        routeName: newRoute.settings.name!, type: StackEvent.becameVisible);
     // print("items: " + globalStack.toString());
     super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
   }
 
   @override
-  void didRemove(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
     // print("item removed on tab: $tab with name: ${route.settings.name}");
-    assert(route.settings != null);
-    if (previousRoute != null){
-      assert(previousRoute.settings != null);
-    }
-
     stack.removeLast();
     var last = globalStack.where((element) => element.tab == tab).last;
     globalStack.remove(last);
-    onGlobalStackChanged(routeName: route.settings.name, type: StackEvent.becameInvisible);
-    if (previousRoute != null){
-      onGlobalStackChanged(routeName: previousRoute.settings.name, type: StackEvent.becameVisible);
-
+    onGlobalStackChanged(
+        routeName: route.settings.name!, type: StackEvent.becameInvisible);
+    if (previousRoute != null) {
+      onGlobalStackChanged(
+          routeName: previousRoute.settings.name!,
+          type: StackEvent.becameVisible);
     }
     // print("items: " + globalStack.toString());
 
@@ -429,20 +422,18 @@ class TabNavigatorObserver extends NavigatorObserver {
 
 
   @override
-  void didPush(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     // print("item pushed on tab: $tab with name: ${route.settings.name}");
-    assert(route.settings != null);
-    if (previousRoute != null) {
-      assert(previousRoute.settings != null);
-    }
     if (route.settings.name != emptyName) {
-      stack.add(TabNavigatorStackItem(tab, route.settings.name,
+      stack.add(TabNavigatorStackItem(tab, route.settings.name!,
           isFirst: route.isFirst));
-      globalStack.add(TabNavigatorStackItem(tab, route.settings.name,
+      globalStack.add(TabNavigatorStackItem(tab, route.settings.name!,
           isFirst: route.isFirst));
-      onGlobalStackChanged(routeName: route.settings.name, type: StackEvent.becameVisible);
+      onGlobalStackChanged(
+          routeName: route.settings.name!, type: StackEvent.becameVisible);
       if (previousRoute != null) {
-        onGlobalStackChanged(routeName: previousRoute.settings.name,
+        onGlobalStackChanged(
+            routeName: previousRoute.settings.name!,
             type: StackEvent.becameInvisible);
       }
     } else if (route.settings.name == emptyName &&
@@ -452,7 +443,9 @@ class TabNavigatorObserver extends NavigatorObserver {
           .removeWhere((element) => element.tab == tab && element.isFirst);
     }
     if (route.settings.name == emptyName && previousRoute != null) {
-      onGlobalStackChanged(routeName: previousRoute.settings.name, type: StackEvent.becameInvisible);
+      onGlobalStackChanged(
+          routeName: previousRoute.settings.name!,
+          type: StackEvent.becameInvisible);
     }
 
     // print("items: " + globalStack.toString());
